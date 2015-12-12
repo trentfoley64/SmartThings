@@ -135,12 +135,17 @@ def runThermostatControl() {
 	if (passedChecks) {
 		def msg="${parent.thermostats} heat setpoint to '${heatSetpoint}' and cool setpoint to '${coolSetpoint}'"
 		log.debug app.label + ": " + msg
+        // curious to see what this function does
+        sendNotificationEvent app.label + ": " + msg
 		parent.thermostats.setHeatingSetpoint(heatSetpoint)
 		parent.thermostats.setCoolingSetpoint(coolSetpoint)
 		sendMessage msg
 	}
     else {
-    	log.debug app.label + ": passedChecks is false"
+    	def msg=app.label + ": passedChecks is false"
+    	log.debug msg
+        // curious to see what this function does
+        sendNotificationEvent msg
     }
 }
 
