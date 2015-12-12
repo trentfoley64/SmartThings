@@ -3,6 +3,7 @@
 todo:
 1) DONE 12/11/2015: move thermostat to parent
 2) figure out how to provide default name of child smartapp
+3) Figure out how to hide child apps from mobile app
 
 */
 
