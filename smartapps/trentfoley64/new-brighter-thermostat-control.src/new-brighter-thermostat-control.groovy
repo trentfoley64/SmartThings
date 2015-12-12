@@ -26,10 +26,6 @@ preferences {
 
 def prefsSchedule() {
 	dynamicPage(name: "prefsSchedule", title: "Brighter Thermostat Control", nextPage: "prefsName", install: false, uninstall: true) {
-		// Let user pick thermostats
-		//section("Set these thermostats") {
-		//	input "thermostats", "capability.thermostat", title: "Which?", multiple: true
-		//}
 		// Let user pick set points
 		section("To these set points") {
 			input "heatSetpoint", "decimal", title: "for Heating", default:70
@@ -40,9 +36,9 @@ def prefsSchedule() {
 			input "daysOfWeekList", "enum", title: "Which days?", required: true, multiple: true,
 				options: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
 		}
-		// Let user specify Time
+		// Let user specify Time of day
 		section("Time of day") {
-			input "time", "time", title: "At this time of day"
+			input "timeOfDay", "time", title: "At this time of day"
 		}
 		// Let user specify presence rules
 		section( "Presences") {
@@ -80,12 +76,15 @@ def updated() {
 
 def initialize() {
 	// get a date/time object for today at time specified by schedule
-	def scheduleTime=timeToday(time,location.timeZone)
+	def scheduleTime=timeToday(timeOfDay,location.timeZone)
     // compute next date/time for schedule determined by daysOfWeekList
 	def nextRunTime=nextDayOfWeekDate(scheduleTime,daysOfWeekList)
     // Schedule thermostat control to run on computed date/time
     if(nextRunTime) {
-		log.debug "Scheduling next run for " + nextRunTime.format("EEE MMM dd yyyy HH:mm z", location.timeZone)
+		def msg="Scheduling next run for " + nextRunTime.format("EEE MMM dd yyyy HH:mm z", location.timeZone)
+		log.debug msg
+        // curious to see what this function does
+        sendNotificationEvent msg
 		runOnce(nextRunTime,runThermostatControl)
     }
     else {
@@ -102,7 +101,7 @@ def initialize() {
 
 private getDefaultLabel() {
 	// still trying to figure out a way to provide a default, or to automatically name a child smartapp
-	def msg="${parent.thermostats} $time $daysOfWeekList $anyMustBePresent $allMustBepresent $anyMustBeAbsent $allMustBeAbsent"
+	def msg="${parent.thermostats} $timeOfDay $daysOfWeekList $anyMustBePresent $allMustBepresent $anyMustBeAbsent $allMustBeAbsent"
 	return msg
 }
 
