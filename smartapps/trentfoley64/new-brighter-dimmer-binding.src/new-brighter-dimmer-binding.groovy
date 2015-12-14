@@ -59,24 +59,59 @@ definition(
 )
 
 preferences {
-	section("When this...") { 
-		input "master", "capability.switchLevel", 
-			multiple: false, 
-			title: "Master Dimmer Switch...", 
-			required: true
+	page name: "mainPage", title: "New Brighter Dimmer Bindings", install: false, uninstall: true, nextPage: "namePage"
+	page name: "namePage", title: "New Brighter Dimmer Bindings", install: true, uninstall: true
+}
+
+def mainPage() {
+    dynamicPage(name: "mainPage") {
+		section("When this...") { 
+			input "master", "capability.switchLevel", 
+				multiple: false, 
+				title: "Master Dimmer Switch...", 
+				required: true
+		}
+		section("And these will follow with dimming level...") {
+			input "slaveDimmers", "capability.switchLevel", 
+				multiple: true, 
+				title: "Slave Dimmer Switch(es)...", 
+				required: true
+		}
+		section("Then these will follow with on/off...") {
+			input "slaveSwitches", "capability.switch", 
+				multiple: true, 
+				title: "Slave On/Off Switch(es)...", 
+				required: false
+		}
 	}
-	section("And these will follow with dimming level...") {
-		input "slaveDimmers", "capability.switchLevel", 
-			multiple: true, 
-			title: "Slave Dimmer Switch(es)...", 
-			required: true
-	}
-	section("Then these will follow with on/off...") {
-		input "slaveSwitches", "capability.switch", 
-			multiple: true, 
-			title: "Slave On/Off Switch(es)...", 
-			required: false
-	}
+}
+
+// page for allowing the user to give the automation a custom name
+def namePage() {
+    if (!overrideLabel) {
+        // if the user selects to not change the label, give a default label
+        def l = defaultLabel()
+        app.updateLabel(l)
+    }
+    dynamicPage(name: "namePage") {
+        if (overrideLabel) {
+            section("Automation name") {
+                label title: "Enter custom name", defaultValue: app.label, required: false
+            }
+        } else {
+            section("Automation name") {
+                paragraph app.label
+            }
+        }
+        section {
+            input "overrideLabel", "bool", title: "Edit automation name", defaultValue: "false", required: "false", submitOnChange: true
+        }
+    }
+}
+
+def defaultLabel() {
+	// Default label to name of master dimmer
+    "$master binding"
 }
 
 def installed()
