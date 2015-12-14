@@ -20,12 +20,12 @@ definition(
 )
 
 preferences {
-	page(name: "prefsSchedule")
-	page(name: "prefsName")
+	page(name: "schedulePage")
+	page(name: "namePage")
 }
 
-def prefsSchedule() {
-	dynamicPage(name: "prefsSchedule", title: "Brighter Thermostat Control", nextPage: "prefsName", install: false, uninstall: true) {
+def schedulePage() {
+	dynamicPage(name: "schedulePage", title: "Brighter Thermostat Control", nextPage: "namePage", install: false, uninstall: true) {
 		// Let user pick set points
 		section("To these set points") {
 			input "heatSetpoint", "decimal", title: "for Heating", default:70
@@ -55,22 +55,34 @@ def prefsSchedule() {
 	}
 }
 
-def prefsName() {
-	dynamicPage(name: "prefsName", title: "Brighter Thermostat Control", install: true, uninstall: true) {
-		section("Control name") {
-        	// still trying to figure out how to default the app label
-			label title: "Assign a name", required: true, description: getDefaultLabel(), default: "${parent.thermostats}"
-		}
-	}
+def namePage() {
+    if (!overrideLabel) {
+        // if the user selects to not change the label, give a default label
+        app.updateLabel(defaultLabel())
+    }
+    dynamicPage(name: "namePage") {
+        if (overrideLabel) {
+            section("Automation name") {
+                label title: "Enter custom name", defaultValue: app.label, required: false
+            }
+        } else {
+            section("Automation name") {
+                paragraph app.label
+            }
+        }
+        section {
+            input "overrideLabel", "bool", title: "Edit automation name", defaultValue: "false", required: "false", submitOnChange: true
+        }
+    }
 }
 
 def installed() {
-	log.debug "Installed with $settings"
+	log.debug "${app.label}: Installed with $settings"
 	initialize()
 }
 
 def updated() {
-	log.debug "Updated with $settings"
+	log.debug "${app.label}: Updated with $settings"
 	initialize()
 }
 
@@ -81,7 +93,7 @@ def initialize() {
 	def nextRunTime=nextDayOfWeekDate(scheduleTime,daysOfWeekList)
     // Schedule thermostat control to run on computed date/time
     if(nextRunTime) {
-		def msg="Scheduling next run for " + nextRunTime.format("EEE MMM dd yyyy HH:mm z", location.timeZone)
+		def msg="${app.label}: Scheduling next run for " + nextRunTime.format("EEE MMM dd yyyy HH:mm z", location.timeZone)
 		log.debug msg
         // curious to see what this function does
         sendNotificationEvent msg
@@ -99,10 +111,8 @@ def initialize() {
     }
 }
 
-private getDefaultLabel() {
-	// still trying to figure out a way to provide a default, or to automatically name a child smartapp
-	def msg="${parent.thermostats} $timeOfDay $daysOfWeekList $anyMustBePresent $allMustBepresent $anyMustBeAbsent $allMustBeAbsent"
-	return msg
+def defaultLabel() {
+	"${parent.thermostats} $timeOfDay ($daysOfWeekList) $anyMustBePresent $allMustBepresent $anyMustBeAbsent $allMustBeAbsent"
 }
 
 // return the next date, starting from startTime, that falls on a day of week in DaysOfWeekList
@@ -121,7 +131,7 @@ private nextDayOfWeekDate(startTime,daysOfWeekList) {
         nextScheduleTime=nextScheduleTime + 1
     }
     // If we get to this point, we are on the wrong planet and something is very wrong.
-	log.debug "Wrong Planet Error. Unable to compute nextDayOfWeekDate for startTime=$startTime and daysOfWeekList=$daysOfWeekList."
+	log.debug "${app.label}: Wrong Planet Error. Unable to compute nextDayOfWeekDate for startTime=$startTime and daysOfWeekList=$daysOfWeekList."
 	return null
 }
 
@@ -133,17 +143,17 @@ def runThermostatControl() {
 	// If we have hit the conditions to execute this then lets do it
 	if (passedChecks) {
 		def msg="${parent.thermostats} heat setpoint to '${heatSetpoint}' and cool setpoint to '${coolSetpoint}'"
-		log.debug app.label + ": " + msg
-        // curious to see what this function does
-        sendNotificationEvent app.label + ": " + msg
+		log.debug "${app.label}: $msg"
+        sendNotificationEvent "${app.label}: $msg"
+        // do the actual thermostat change
 		parent.thermostats.setHeatingSetpoint(heatSetpoint)
 		parent.thermostats.setCoolingSetpoint(coolSetpoint)
+        // send any push / notification messages
 		sendMessage msg
 	}
     else {
-    	def msg=app.label + ": passedChecks is false"
+    	def msg="${app.label}: passedChecks is false"
     	log.debug msg
-        // curious to see what this function does
         sendNotificationEvent msg
     }
 }
@@ -153,7 +163,7 @@ private checkPresences() {
 	if (anyMustBePresent) {
 		// If anyMustBePresent does not contain anyone present, do not change thermostats
 		if (!anyMustBePresent.currentValue('presence').contains('present')) {
-			log.debug app.label + ": change cancelled due to all of ${anyMustBePresent} being absent."
+			log.debug "${app.label}: change cancelled due to all of ${anyMustBePresent} being absent."
 			return false
 		}
 	}
@@ -161,7 +171,7 @@ private checkPresences() {
 	if (allMustBePresent) {
 		// If allMustBePresent contains anyone not present, do not change thermostats
 		if (allMustBePresent.currentValue('presence').contains('not present')) {
-			log.debug app.label + ": cancelled due to one of ${allMustBePresent} being absent."
+			log.debug "${app.label}: cancelled due to one of ${allMustBePresent} being absent."
 			return false
 		}
 	}
@@ -169,7 +179,7 @@ private checkPresences() {
 	if (anyMustBeAbsent) {
 		// If anyMustBeAbsent does not contain anyone not present, do not change thermostats
 		if (!anyMustBeAbsent.currentValue('presence').contains('not present')) {
-			log.debug app.label + ": cancelled due to all of ${anyMustBeAbsent} being present."
+			log.debug "${app.label}: cancelled due to all of ${anyMustBeAbsent} being present."
 			return false
 		}
 	}
@@ -177,7 +187,7 @@ private checkPresences() {
 	if (allMustBeAbsent) {
 		// If allMustBeAbsent contains anyone present, do not change thermostats
 		if (allMustBeAbsent.currentValue('presence').contains('present')) {
-			log.debug app.label + ": cancelled due to one of ${allMustBeAbsent} being present."
+			log.debug "${app.label}: cancelled due to one of ${allMustBeAbsent} being present."
 			return false
 		}
 	}
