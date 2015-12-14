@@ -20,12 +20,14 @@ definition(
 )
 
 preferences {
-	page(name: "schedulePage")
-	page(name: "namePage")
+	page name: "schedulePage", title: "Brighter Thermostat Control", install: false, uninstall: true, nextPage: "namePage"
+	page name: "namePage", title: "Brighter Thermostat Control", install: true, uninstall: true
+
+
 }
 
 def schedulePage() {
-	dynamicPage(name: "schedulePage", title: "Brighter Thermostat Control", nextPage: "namePage", install: false, uninstall: true) {
+	dynamicPage(name: "schedulePage") {
 		// Let user pick set points
 		section("To these set points") {
 			input "heatSetpoint", "decimal", title: "for Heating", default:70
@@ -112,7 +114,8 @@ def initialize() {
 }
 
 def defaultLabel() {
-	"${parent.thermostats} $timeOfDay ($daysOfWeekList) $anyMustBePresent $allMustBepresent $anyMustBeAbsent $allMustBeAbsent"
+	//"${parent.thermostats} $timeOfDay ($daysOfWeekList) $anyMustBePresent $allMustBepresent $anyMustBeAbsent $allMustBeAbsent"
+    app.label
 }
 
 // return the next date, starting from startTime, that falls on a day of week in DaysOfWeekList
