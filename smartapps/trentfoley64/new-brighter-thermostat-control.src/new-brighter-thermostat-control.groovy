@@ -103,19 +103,33 @@ def initialize() {
     }
     else {
     	// This should never happen.  Since both daysOfWeekList and time are required there is no
-        // reason why nextRunTime should ever be null
+        // reason why nextRunTime should ever be null, so throw a fit screaming and kicking
     	def msg="Aborting Brighter Thermostat Control: ${app.label}." +
 		        " Could not schedule next run for " + scheduleTime.format("EEE MMM dd yyyy HH:mm z", location.timeZone) +
                 " for daysOfWeekList=" + daysOfWeekList
     	log.debug msg
+        sendNotificationEvent msg
         // Send a push message because this is a bad error
 		sendPush msg
     }
 }
 
 def defaultLabel() {
-	//"${parent.thermostats} $timeOfDay ($daysOfWeekList) $anyMustBePresent $allMustBepresent $anyMustBeAbsent $allMustBeAbsent"
-    app.label
+    def msg=""
+    if (anyMustBePresent) {
+    	msg=msg?"$msg, and ":"" + "any of ${anyMustBePresent} are present"
+	}
+    if (allMustBePresent) {
+    	msg=msg?"$msg, and ":"" + "all of ${allMustBePresent} are present"
+    }
+    if (anyMustBeAbsent) {
+    	msg=msg?"$msg, and ":"" + "any of ${anyMustBeAbsent} are absent"
+    }
+    if (allMustBeAbsent) {
+    	msg=msg?"$msg, and ":"" + "all of ${allMustBeAbsent} are absent"
+    }
+	"Set ${parent.thermostats} to ${heatSetpoint}/${coolSetpoint} at " +
+    timeOfDay.format("HH:mm z", location.timeZone) + " on ($daysOfWeekList)" + msg?:" when $msg"
 }
 
 // return the next date, starting from startTime, that falls on a day of week in DaysOfWeekList
@@ -125,6 +139,19 @@ private nextDayOfWeekDate(startTime,daysOfWeekList) {
 	def nextScheduleTime=((now()+2000) < startTime.time) ? startTime : startTime + 1
     // Check for up to 7 days ahead to find a date that matches our daysOfWeekList
 	// use EEEE format to convert to long form day of week (Sunday,Monday,...Saturday)
+    //
+    // debugging apparent problem for events scheduled at midnight
+    def msg=""
+    def proc="${app.label}: nextDayOfWeekDate"
+    msg="daysOfWeekList=${daysOfWeekList}"
+	sendNotificationEvent "$proc, $msg"
+    msg="startTime=${startTime}"
+	sendNotificationEvent "$proc, $msg"
+    msg="now()=${now()}"
+	sendNotificationEvent "$proc, $msg"
+    msg="startTime.time=${startTime.time}"
+	sendNotificationEvent "$proc, $msg"
+    //
     for(def i=0; i<7; i++) {
         if (daysOfWeekList.contains(nextScheduleTime.format("EEEE",location.timeZone))) {
         	// all done - found a date that falls on one of daysOfWeekList
