@@ -19,7 +19,7 @@ definition(
 	name: "New Brighter Button Controller",
 	namespace: "trentfoley64",
 	author: "A. Trent Foley",
-	description: "Control devices with buttons like the Aeon Labs Minimote with dimming",
+	description: "Child app for Brighter Button Controller.  Control devices with buttons like the Aeon Labs Minimote with dimming",
 	parent: "trentfoley64:Brighter Button Controllers",
 	category: "My Apps",
 	iconUrl: "http://www.trentfoley.com/ST/icons/brighter-button-controller.png",

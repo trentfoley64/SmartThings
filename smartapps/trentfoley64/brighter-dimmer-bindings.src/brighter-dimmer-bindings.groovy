@@ -16,7 +16,7 @@ definition(
     singleInstance: true,
     namespace: "trentfoley64",
     author: "A. Trent Foley, Sr.",
-    description: "Allow multiple dimmers do be bound to a single real or virtual (simulated) dimmer.  Very useful for grouping GE Link Bulbs together as one light.  A virtual dimmer device type makes this smartapp much more useful.",
+    description: "Allow multiple dimmers do be bound to a single real or virtual (simulated) dimmer.  Very useful for grouping GE Link Bulbs together as one light.  A virtual dimmer device type makes this smartapp much more useful.  At the point of writing (12/2015), there is no such simulated device supplied with the SmartThings platform.",
     category: "My Apps",
   	iconUrl: "http://www.trentfoley.com/ST/icons/dimmer-bindings.png",
     iconX2Url: "http://www.trentfoley.com/ST/icons/dimmer-bindings@2x.png",

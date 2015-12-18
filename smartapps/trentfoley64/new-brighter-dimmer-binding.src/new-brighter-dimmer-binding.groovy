@@ -50,7 +50,7 @@ definition(
     name: "New Brighter Dimmer Binding",
     namespace: "trentfoley64",
     author: "A. Trent Foley, Sr.",
-    description: "Follows the dimmer level of another dimmer",
+    description: "Child app for Brighter Dimmer Binding.  Binds multiple dimmable devices to a single device, usually virtual.",
     parent: "trentfoley64:Brighter Dimmer Bindings",
     category: "My Apps",
   	iconUrl: "http://www.trentfoley.com/ST/icons/dimmer-bindings.png",

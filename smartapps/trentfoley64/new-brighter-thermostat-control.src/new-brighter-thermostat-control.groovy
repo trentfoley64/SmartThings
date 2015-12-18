@@ -11,7 +11,7 @@ definition(
 	name: "New Brighter Thermostat Control",
 	namespace: "trentfoley64",
 	author: "A. Trent Foley, Sr.",
-	description: "Child SmartApp for Brighter Thermostat Controls.",
+	description: "Child app for Brighter Thermostat Controls.",
 	category: "My Apps",
 	parent: "trentfoley64:Brighter Thermostat Controls",
 	iconUrl: "http://www.trentfoley.com/ST/icons/thermostat.png",
