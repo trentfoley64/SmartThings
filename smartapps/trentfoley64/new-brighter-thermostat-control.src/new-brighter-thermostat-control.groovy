@@ -141,16 +141,16 @@ private nextDayOfWeekDate(startTime,daysOfWeekList) {
 	// use EEEE format to convert to long form day of week (Sunday,Monday,...Saturday)
     //
     // debugging apparent problem for events scheduled at midnight
-    def msg=""
-    def proc="${app.label}: nextDayOfWeekDate"
-    msg="daysOfWeekList=${daysOfWeekList}"
-	sendNotificationEvent "$proc, $msg"
-    msg="startTime=${startTime}"
-	sendNotificationEvent "$proc, $msg"
-    msg="now()=${now()}"
-	sendNotificationEvent "$proc, $msg"
-    msg="startTime.time=${startTime.time}"
-	sendNotificationEvent "$proc, $msg"
+    //def msg=""
+    //def proc="${app.label}: nextDayOfWeekDate"
+    //msg="daysOfWeekList=${daysOfWeekList}"
+	//sendNotificationEvent "$proc, $msg"
+    //msg="startTime=${startTime}"
+	//sendNotificationEvent "$proc, $msg"
+    //msg="now()=${now()}"
+	//sendNotificationEvent "$proc, $msg"
+    //msg="startTime.time=${startTime.time}"
+	//sendNotificationEvent "$proc, $msg"
     //
     for(def i=0; i<7; i++) {
         if (daysOfWeekList.contains(nextScheduleTime.format("EEEE",location.timeZone))) {

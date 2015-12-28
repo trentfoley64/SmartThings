@@ -35,22 +35,69 @@ definition(
 )
 
 preferences {
-	// Let user specify devices to control
-	section("Devices to turn off") {
-		input "devices", "capability.switch", title: "Choose devices", multiple: true
+	page name: "mainPage", title: "New Presence and Motion based Automation", install: false, uninstall: true, nextPage: "namePage"
+	page name: "namePage", title: "New Presence and Motion based Automation", install: true, uninstall: true
+}
+
+def mainPage() {
+    dynamicPage(name: "mainPage") {
+		// Let user specify devices to control
+		section("Devices to turn off") {
+			input "devices", "capability.switch", title: "Choose devices", multiple: true
+		}
+		// Let user specify motion sensor to monitor
+		section("Motion Sensor to monitor") {
+			input "motionSensor", "capability.motionSensor", title: "Choose motion sensor", multiple: false
+			input "motionDelayMins", "number", title: "Minutes since inactivity before valid?"
+		}
+		// Let user specify presence rules
+		section( "Presences", hideable: true, hidden: !(anyMustBePresent||allMustBePresent||anyMustBeAbsent||allMustBeAbsent)) {
+			input "anyMustBePresent", "capability.presenceSensor", title: "At least one must be present", multiple: true, required: false
+			input "allMustBePresent", "capability.presenceSensor", title: "All must be present", multiple: true, required: false
+			input "anyMustBeAbsent", "capability.presenceSensor", title: "At least one must be absent", multiple: true, required: false
+			input "allMustBeAbsent", "capability.presenceSensor", title: "All must be absent", multiple: true, required: false
+		}
 	}
-	// Let user specify motion sensor to monitor
-	section("Motion Sensor to monitor") {
-		input "motionSensor", "capability.motionSensor", title: "Choose motion sensor", multiple: false
-		input "motionDelayMins", "number", title: "Minutes since inactivity before valid?"
+}
+
+// page for allowing the user to give the automation a custom name
+def namePage() {
+    if (!overrideLabel) {
+        // if the user selects to not change the label, give a default label
+        def l = defaultLabel()
+        app.updateLabel(l)
+    }
+    dynamicPage(name: "namePage") {
+        if (overrideLabel) {
+            section("Automation name") {
+                label title: "Enter custom name", defaultValue: app.label, required: false
+            }
+        } else {
+            section("Automation name") {
+                paragraph app.label
+            }
+        }
+        section {
+            input "overrideLabel", "bool", title: "Edit automation name", defaultValue: "false", required: "false", submitOnChange: true
+        }
+    }
+}
+
+def defaultLabel() {
+    def msg=""
+    if (anyMustBePresent) {
+    	msg=msg?"$msg, and ":"" + "any of ${anyMustBePresent} are present"
 	}
-	// Let user specify presence rules
-	section( "Presences", hideable: true, hidden: !(anyMustBePresent||allMustBePresent||anyMustBeAbsent||allMustBeAbsent)) {
-		input "anyMustBePresent", "capability.presenceSensor", title: "At least one must be present", multiple: true, required: false
-		input "allMustBePresent", "capability.presenceSensor", title: "All must be present", multiple: true, required: false
-		input "anyMustBeAbsent", "capability.presenceSensor", title: "At least one must be absent", multiple: true, required: false
-		input "allMustBeAbsent", "capability.presenceSensor", title: "All must be absent", multiple: true, required: false
-	}
+    if (allMustBePresent) {
+    	msg=msg?"$msg, and ":"" + "all of ${allMustBePresent} are present"
+    }
+    if (anyMustBeAbsent) {
+    	msg=msg?"$msg, and ":"" + "any of ${anyMustBeAbsent} are absent"
+    }
+    if (allMustBeAbsent) {
+    	msg=msg?"$msg, and ":"" + "all of ${allMustBeAbsent} are absent"
+    }
+    "Turn off $devices when no motion $motionDelayMins min" + msg?:" when $msg"
 }
 
 def installed() {
