@@ -135,12 +135,10 @@ def defaultLabel() {
 // return the next date, starting from startTime, that falls on a day of week in DaysOfWeekList
 private nextDayOfWeekDate(startTime,daysOfWeekList) {
     // If it is early enough for schedule to run today, start from today; otherwise, start from tomorrow.
-    // Also, there is a need to add a couple of minutes (2000ms) to now() to cover any sort of smartthings lag.
-	def nextScheduleTime=((now()+2000) < startTime.time) ? startTime : startTime + 1
-    // Check for up to 7 days ahead to find a date that matches our daysOfWeekList
-	// use EEEE format to convert to long form day of week (Sunday,Monday,...Saturday)
+    // Also, there is a need to add a couple of minutes (2000ms) to time to cover any sort of smartthings lag.
+	def nextScheduleTime=(now() < (startTime.time+2000)) ? startTime : startTime + 1
     //
-    // debugging apparent problem for events scheduled at midnight
+    // debugging - events not scheduling for some reason
     //def msg=""
     //def proc="${app.label}: nextDayOfWeekDate"
     //msg="daysOfWeekList=${daysOfWeekList}"
@@ -152,6 +150,8 @@ private nextDayOfWeekDate(startTime,daysOfWeekList) {
     //msg="startTime.time=${startTime.time}"
 	//sendNotificationEvent "$proc, $msg"
     //
+    // Check for up to 7 days ahead to find a date that matches our daysOfWeekList
+	// use EEEE format to convert to long form day of week (Sunday,Monday,...Saturday)
     for(def i=0; i<7; i++) {
         if (daysOfWeekList.contains(nextScheduleTime.format("EEEE",location.timeZone))) {
         	// all done - found a date that falls on one of daysOfWeekList
