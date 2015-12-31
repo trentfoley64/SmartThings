@@ -22,8 +22,6 @@ definition(
 preferences {
 	page name: "schedulePage", title: "Brighter Thermostat Control", install: false, uninstall: true, nextPage: "namePage"
 	page name: "namePage", title: "Brighter Thermostat Control", install: true, uninstall: true
-
-
 }
 
 def schedulePage() {
@@ -95,20 +93,19 @@ def initialize() {
 	def nextRunTime=nextDayOfWeekDate(scheduleTime,daysOfWeekList)
     // Schedule thermostat control to run on computed date/time
     if(nextRunTime) {
-		def msg="${app.label}: Scheduling next run for " + nextRunTime.format("EEE MMM dd yyyy HH:mm z", location.timeZone)
-		log.debug msg
-        // curious to see what this function does
+		msg="${app.label}: Scheduling next run for " + nextRunTime.format("EEE MMM dd yyyy HH:mm z", location.timeZone)
         sendNotificationEvent msg
+		log.debug msg
 		runOnce(nextRunTime,runThermostatControl)
     }
     else {
     	// This should never happen.  Since both daysOfWeekList and time are required there is no
         // reason why nextRunTime should ever be null, so throw a fit screaming and kicking
-    	def msg="Aborting Brighter Thermostat Control: ${app.label}." +
-		        " Could not schedule next run for " + scheduleTime.format("EEE MMM dd yyyy HH:mm z", location.timeZone) +
-                " for daysOfWeekList=" + daysOfWeekList
-    	log.debug msg
+    	msg="Aborting Brighter Thermostat Control: ${app.label}." +
+		    " Could not schedule next run for " + scheduleTime.format("EEE MMM dd yyyy HH:mm z", location.timeZone) +
+            " for daysOfWeekList=" + daysOfWeekList
         sendNotificationEvent msg
+    	log.debug msg
         // Send a push message because this is a bad error
 		sendPush msg
     }
@@ -166,13 +163,17 @@ private nextDayOfWeekDate(startTime,daysOfWeekList) {
 }
 
 def runThermostatControl() {
+	// trying to debug why events aren't rescheduled
+	def msg="${app.label}: runThermostatControl at " + new Date(now()).format("EEE MMM dd yyyy HH:mm z", location.timeZone)
+    sendNotificationEvent msg
+    log.debug msg
 	// before doing anything else, schedule our next run
 	initialize()
  	// Check presences
  	def passedChecks=checkPresences()
 	// If we have hit the conditions to execute this then lets do it
 	if (passedChecks) {
-		def msg="${parent.thermostats} heat setpoint to '${heatSetpoint}' and cool setpoint to '${coolSetpoint}'"
+		msg="${parent.thermostats} heat setpoint to '${heatSetpoint}' and cool setpoint to '${coolSetpoint}'"
 		log.debug "${app.label}: $msg"
         sendNotificationEvent "${app.label}: $msg"
         // do the actual thermostat change
@@ -182,7 +183,7 @@ def runThermostatControl() {
 		sendMessage msg
 	}
     else {
-    	def msg="${app.label}: passedChecks is false"
+    	msg="${app.label}: passedChecks is false"
     	log.debug msg
         sendNotificationEvent msg
     }
