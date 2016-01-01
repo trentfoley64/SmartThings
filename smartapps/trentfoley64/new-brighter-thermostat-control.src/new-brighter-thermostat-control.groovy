@@ -4,9 +4,8 @@ todo:
 1) DONE 12/11/2015: move thermostat to parent
 2) DONE 12/20/2015: figure out how to provide default name of child smartapp
 3) DONE 12/20/2015: Figure out how to hide child apps from mobile app - don't publish the child app, just the parent
-4) Convert from runOnce to schedule() using crontab syntax - hoping this will solve re-scheduling problem.  It will also
+4) DONE 12/31/2015: Convert from runOnce to schedule() using crontab syntax - hoping this will solve re-scheduling problem.  It will also
    obviate the need for computing the next date based on day of week
-
 */
 
 definition(
@@ -89,27 +88,31 @@ def updated() {
 }
 
 def initialize() {
+	// build crontab from timeOfDay and daysOfWeekList
     def crontab=buildCronTab()
+    // debug messages:
     def msg="${app.label}: schedule $crontab"
     log.debug msg
     sendNotificationEvent msg
-    
+    // schedule the thermostat control based on crontab
     schedule(crontab,runThermostatControl)
 }
 
 def buildCronTab() {
+	// make date object from timeOfDay
 	def cronDate=timeToday(timeOfDay,location.timeZone)
+    // extract minute and hour from time, adjusted for timeZone
     def cronMinute=cronDate.format("mm",location.timeZone)
     def cronHour=cronDate.format("HH",location.timeZone)
     // build list of days of weeks separated by comma with no spaces
-    def cronDOWs=""
+    def cronDayOfWeekList=""
     def cronComma=""
     for(def i=0;i<daysOfWeekList.size();i++) {
-    	cronDOWs=cronDOWs+cronComma+daysOfWeekList[i].toUpperCase()
+    	cronDayOfWeekList=cronDayOfWeekList+cronComma+daysOfWeekList[i].toUpperCase()
         cronComma=","
     }
     // crontab expects:  <hour> <minute> <hour> <dayOfMonth> <month> <daysOfWeek> [<year>]
-    return "0 $cronMinute $cronHour ? * $cronDOWs"
+    return "0 $cronMinute $cronHour ? * $cronDayOfWeekList"
 }
 
 def defaultLabel() {
@@ -127,7 +130,7 @@ def defaultLabel() {
     	msg=msg?"$msg, and ":"" + "all of ${allMustBeAbsent} are absent"
     }
 	"Set ${parent.thermostats} to ${heatSetpoint}/${coolSetpoint} at " +
-    timeOfDay.format("HH:mm z", location.timeZone) + " on ($daysOfWeekList)" + msg?:" when $msg"
+    timeOfDay.format("HH:mm z", location.timeZone) + " on ($daysOfWeekList)" + msg?" when $msg":""
 }
 
 def runThermostatControl() {
@@ -145,22 +148,22 @@ def runThermostatControl() {
         // do the actual thermostat change
 		parent.thermostats.setHeatingSetpoint(heatSetpoint)
 		parent.thermostats.setCoolingSetpoint(coolSetpoint)
+        parent.thermostats.setThermostatMode("auto")
+        parent.thermostats.setThermostatFanMode("auto")
         // send any push / notification messages
 		sendMessage msg
 	}
-    else {
-    	msg="${app.label}: passedChecks is false"
-    	log.debug msg
-        sendNotificationEvent msg
-    }
 }
 
 private checkPresences() {
+	def msg=""
 	// If defined, check anyMustBePresent
 	if (anyMustBePresent) {
 		// If anyMustBePresent does not contain anyone present, do not change thermostats
 		if (!anyMustBePresent.currentValue('presence').contains('present')) {
-			log.debug "${app.label}: change cancelled due to all of ${anyMustBePresent} being absent."
+			msg="${app.label}: change cancelled due to all of ${anyMustBePresent} being absent."
+			log.debug msg
+        	sendNotificationEvent msg
 			return false
 		}
 	}
@@ -168,7 +171,9 @@ private checkPresences() {
 	if (allMustBePresent) {
 		// If allMustBePresent contains anyone not present, do not change thermostats
 		if (allMustBePresent.currentValue('presence').contains('not present')) {
-			log.debug "${app.label}: cancelled due to one of ${allMustBePresent} being absent."
+			msg="${app.label}: cancelled due to one of ${allMustBePresent} being absent."
+			log.debug msg
+        	sendNotificationEvent msg
 			return false
 		}
 	}
@@ -176,7 +181,9 @@ private checkPresences() {
 	if (anyMustBeAbsent) {
 		// If anyMustBeAbsent does not contain anyone not present, do not change thermostats
 		if (!anyMustBeAbsent.currentValue('presence').contains('not present')) {
-			log.debug "${app.label}: cancelled due to all of ${anyMustBeAbsent} being present."
+			msg="${app.label}: cancelled due to all of ${anyMustBeAbsent} being present."
+			log.debug msg
+        	sendNotificationEvent msg
 			return false
 		}
 	}
@@ -184,12 +191,14 @@ private checkPresences() {
 	if (allMustBeAbsent) {
 		// If allMustBeAbsent contains anyone present, do not change thermostats
 		if (allMustBeAbsent.currentValue('presence').contains('present')) {
-			log.debug "${app.label}: cancelled due to one of ${allMustBeAbsent} being present."
+			msg="${app.label}: cancelled due to one of ${allMustBeAbsent} being present."
+			log.debug msg
+        	sendNotificationEvent msg
 			return false
 		}
 	}
     // If we've gotten to here, all checks have passed
-    return true
+	true
 } 
 
 private sendMessage(msg) {
