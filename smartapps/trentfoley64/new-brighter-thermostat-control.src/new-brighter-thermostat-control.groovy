@@ -35,7 +35,7 @@ def schedulePage() {
 		// Let user pick which days of week
 		section("for Days of Week") {
 			input "daysOfWeekList", "enum", title: "Which days?", required: true, multiple: true,
-				options: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+				options: ['Monday','Tueday','Wednesday','Thursday','Friday','Saturday','Sunday']
 		}
 		// Let user specify Time of day
 		section("Time of day") {
@@ -108,7 +108,7 @@ def buildCronTab() {
     def cronDayOfWeekList=""
     def cronComma=""
     for(def i=0;i<daysOfWeekList.size();i++) {
-    	cronDayOfWeekList=cronDayOfWeekList+cronComma+daysOfWeekList[i].toUpperCase()
+    	cronDayOfWeekList=cronDayOfWeekList+cronComma+daysOfWeekList[i][0..2].toUpperCase()
         cronComma=","
     }
     // crontab expects:  <hour> <minute> <hour> <dayOfMonth> <month> <daysOfWeek> [<year>]
