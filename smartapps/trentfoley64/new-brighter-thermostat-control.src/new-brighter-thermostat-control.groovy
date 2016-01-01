@@ -2,8 +2,10 @@
 
 todo:
 1) DONE 12/11/2015: move thermostat to parent
-2) figure out how to provide default name of child smartapp
-3) Figure out how to hide child apps from mobile app
+2) DONE 12/20/2015: figure out how to provide default name of child smartapp
+3) DONE 12/20/2015: Figure out how to hide child apps from mobile app - don't publish the child app, just the parent
+4) Convert from runOnce to schedule() using crontab syntax - hoping this will solve re-scheduling problem.  It will also
+   obviate the need for computing the next date based on day of week
 
 */
 
@@ -34,7 +36,7 @@ def schedulePage() {
 		// Let user pick which days of week
 		section("for Days of Week") {
 			input "daysOfWeekList", "enum", title: "Which days?", required: true, multiple: true,
-				options: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
+				options: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
 		}
 		// Let user specify Time of day
 		section("Time of day") {
@@ -87,28 +89,27 @@ def updated() {
 }
 
 def initialize() {
-	// get a date/time object for today at time specified by schedule
-	def scheduleTime=timeToday(timeOfDay,location.timeZone)
-    // compute next date/time for schedule determined by daysOfWeekList
-	def nextRunTime=nextDayOfWeekDate(scheduleTime,daysOfWeekList)
-    // Schedule thermostat control to run on computed date/time
-    if(nextRunTime) {
-		msg="${app.label}: Scheduling next run for " + nextRunTime.format("EEE MMM dd yyyy HH:mm z", location.timeZone)
-        sendNotificationEvent msg
-		log.debug msg
-		runOnce(nextRunTime,runThermostatControl)
+    def crontab=buildCronTab()
+    def msg="${app.label}: schedule $crontab"
+    log.debug msg
+    sendNotificationEvent msg
+    
+    schedule(crontab,runThermostatControl)
+}
+
+def buildCronTab() {
+	def cronDate=timeToday(timeOfDay,location.timeZone)
+    def cronMinute=cronDate.format("mm",location.timeZone)
+    def cronHour=cronDate.format("HH",location.timeZone)
+    // build list of days of weeks separated by comma with no spaces
+    def cronDOWs=""
+    def cronComma=""
+    for(def i=0;i<daysOfWeekList.size();i++) {
+    	cronDOWs=cronDOWs+cronComma+daysOfWeekList[i].toUpperCase()
+        cronComma=","
     }
-    else {
-    	// This should never happen.  Since both daysOfWeekList and time are required there is no
-        // reason why nextRunTime should ever be null, so throw a fit screaming and kicking
-    	msg="Aborting Brighter Thermostat Control: ${app.label}." +
-		    " Could not schedule next run for " + scheduleTime.format("EEE MMM dd yyyy HH:mm z", location.timeZone) +
-            " for daysOfWeekList=" + daysOfWeekList
-        sendNotificationEvent msg
-    	log.debug msg
-        // Send a push message because this is a bad error
-		sendPush msg
-    }
+    // crontab expects:  <hour> <minute> <hour> <dayOfMonth> <month> <daysOfWeek> [<year>]
+    return "0 $cronMinute $cronHour ? * $cronDOWs"
 }
 
 def defaultLabel() {
@@ -129,46 +130,11 @@ def defaultLabel() {
     timeOfDay.format("HH:mm z", location.timeZone) + " on ($daysOfWeekList)" + msg?:" when $msg"
 }
 
-// return the next date, starting from startTime, that falls on a day of week in DaysOfWeekList
-private nextDayOfWeekDate(startTime,daysOfWeekList) {
-    // If it is early enough for schedule to run today, start from today; otherwise, start from tomorrow.
-    // Also, there is a need to add a couple of minutes (2000ms) to time to cover any sort of smartthings lag.
-	def nextScheduleTime=(now() < (startTime.time+2000)) ? startTime : startTime + 1
-    //
-    // debugging - events not scheduling for some reason
-    //def msg=""
-    //def proc="${app.label}: nextDayOfWeekDate"
-    //msg="daysOfWeekList=${daysOfWeekList}"
-	//sendNotificationEvent "$proc, $msg"
-    //msg="startTime=${startTime}"
-	//sendNotificationEvent "$proc, $msg"
-    //msg="now()=${now()}"
-	//sendNotificationEvent "$proc, $msg"
-    //msg="startTime.time=${startTime.time}"
-	//sendNotificationEvent "$proc, $msg"
-    //
-    // Check for up to 7 days ahead to find a date that matches our daysOfWeekList
-	// use EEEE format to convert to long form day of week (Sunday,Monday,...Saturday)
-    for(def i=0; i<7; i++) {
-        if (daysOfWeekList.contains(nextScheduleTime.format("EEEE",location.timeZone))) {
-        	// all done - found a date that falls on one of daysOfWeekList
-        	return nextScheduleTime
-        }
-        // nextScheduleTime wasn't in our daysOfWeekList so skip to the next day
-        nextScheduleTime=nextScheduleTime + 1
-    }
-    // If we get to this point, we are on the wrong planet and something is very wrong.
-	log.debug "${app.label}: Wrong Planet Error. Unable to compute nextDayOfWeekDate for startTime=$startTime and daysOfWeekList=$daysOfWeekList."
-	return null
-}
-
 def runThermostatControl() {
 	// trying to debug why events aren't rescheduled
 	def msg="${app.label}: runThermostatControl at " + new Date(now()).format("EEE MMM dd yyyy HH:mm z", location.timeZone)
-    sendNotificationEvent msg
     log.debug msg
-	// before doing anything else, schedule our next run
-	initialize()
+    sendNotificationEvent msg
  	// Check presences
  	def passedChecks=checkPresences()
 	// If we have hit the conditions to execute this then lets do it
