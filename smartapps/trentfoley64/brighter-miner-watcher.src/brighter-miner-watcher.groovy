@@ -37,6 +37,11 @@ preferences {
         input(name: "coolOff", type: "number", title: "For how many minutes?", required: true, description: null)
         input(name: "waitForIt", type: "number", title: "Allow how many minutes for startup?", required: true, description: null)
     }
+	// Let user specify notification recipients
+	section( "Notifications" ) {
+		input "sendPushMessage", "enum", title: "Send a push notification?", options:["Yes", "No"], required: false, default: "No"
+		input "sendSMSNumber", "phone", title: "Send a text message to this number:", required: false
+	}
 }
 
 def installed() {
@@ -52,6 +57,7 @@ def updated() {
 
 def initialize() {
     state.waitingForStartup = false
+    unschedule()
 	subscribe(minerMeter, "power", minerMeterHandler)
 }
 
@@ -63,7 +69,9 @@ def minerMeterHandler(evt) {
     // skip checks in case this is triggered while waiting for startup
     if (!state.waitingForStartup) {
     	if (minerMeterValue <= thresholdLowValue || minerMeterValue >= thresholdHighValue) {
-	    	log.debug "${minerMeter} reported energy consumption of ${minerMeterValue} which is not between ${thresholdLow} and ${thresholdHigh}. Turning off ${minerSwitches}."
+        	def msg = "${minerMeter} reported energy consumption of ${minerMeterValue} which is not between ${thresholdLow} and ${thresholdHigh}. Turning off ${minerSwitches}."
+	    	log.debug msg
+            sendMessage msg
     		minerSwitches.off()
         
         	log.debug "waiting for ${minutes} before restoring power."
@@ -83,5 +91,21 @@ def restorePower() {
 
 def resumeMonitoring() {
 	log.debug "Resume monitoring"
+    minerMeter.refresh
     state.waitingForStartup = false
+}
+
+private sendMessage(msg) {
+	// If user specified sending a push message, do so
+	if (sendPushMessage == "Yes") {
+		sendPush(msg)
+    }
+    else {
+    	// otherwise just send it to hello home
+    	sendNotificationEvent(msg)
+	}
+    // If user supplied a phone number, send an SMS
+	if (sendSMSNumber) {
+		sendSms(sendSMSNumber,msg)
+	}
 }
