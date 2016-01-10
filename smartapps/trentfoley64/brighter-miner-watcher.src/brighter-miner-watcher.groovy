@@ -66,9 +66,12 @@ def minerMeterHandler(evt) {
     def thresholdLowValue = thresholdLow as int
     def thresholdHighValue = thresholdHigh as int
     
+    state.lastMeterValue = minerMeterValue
     // skip checks in case this is triggered while waiting for startup
     if (!state.waitingForStartup) {
     	if (minerMeterValue <= thresholdLowValue || minerMeterValue >= thresholdHighValue) {
+        	state.lastBadMeterValue = minerMeterValue
+            state.lastBadMeterDate = new Date()
         	def msg = "${minerMeter} reported energy consumption of ${minerMeterValue} which is not between ${thresholdLow} and ${thresholdHigh}. Turning off ${minerSwitches}."
 	    	log.debug msg
             sendMessage msg
@@ -91,7 +94,6 @@ def restorePower() {
 
 def resumeMonitoring() {
 	log.debug "Resume monitoring"
-    minerMeter.refresh
     state.waitingForStartup = false
 }
 
