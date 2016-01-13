@@ -126,7 +126,7 @@ def motionHandler(evt) {
         // start the clock waiting for any motion
     	state.motionReported=false
         // schedule motion check, cancelling any prior unexecuted schedules
-        runIn(motionDelayMins*60, scheduledMotionCheck, [overwrite:true])
+        runIn(motionDelayMins*60, scheduledMotionCheck)
 	}
 }
 
