@@ -45,12 +45,12 @@ preferences {
 }
 
 def installed() {
-	log.debug "Installed with settings: ${settings}"
+	log.debug "Installed with settings: $settings"
 	initialize()
 }
 
 def updated() {
-	log.debug "Updated with settings: ${settings}"
+	log.debug "Updated with settings: $settings"
 	unsubscribe()
 	initialize()
 }
@@ -70,26 +70,25 @@ def minerMeterHandler(evt) {
     // skip checks in case this is triggered while waiting for startup
     if (!state.waitingForStartup) {
     	if (minerMeterValue <= thresholdLowValue || minerMeterValue >= thresholdHighValue) {
+    		state.waitingForStartup = true
         	state.lastBadMeterValue = minerMeterValue
             state.lastBadMeterDate = new Date()
-        	def msg = "${minerMeter} reported energy consumption of ${minerMeterValue} which is not between ${thresholdLow} and ${thresholdHigh}. Turning off ${minerSwitches}."
+        	def msg = "$minerMeter reported energy consumption of $minerMeterValue which is not between $thresholdLow and $thresholdHigh. Turning off $minerSwitches."
 	    	log.debug msg
             sendMessage msg
     		minerSwitches.off()
-        
-        	log.debug "waiting for ${minutes} before restoring power."
-    		state.waitingForStartup = true
-        	def minutes = 60 * coolOff
-			runIn(minutes, restorePower)
+        	log.debug "waiting for $coolOff minutes before restoring power."
+        	def waitSeconds = 60 * coolOff
+			runIn(waitSeconds, restorePower)
         }
 	}
 }
 
 def restorePower() {
-	log.debug "Turning on ${minerSwitches}."
+	log.debug "Restoring power to $minerSwitches and waiting for $waitForIt minutes."
 	minerSwitches.on()
-    def minutes = 60 * waitForIt
-    runIn(minutes, resumeMonitoring)
+    def waitSeconds = 60 * waitForIt
+    runIn(waitSeconds, resumeMonitoring)
 }
 
 def resumeMonitoring() {
