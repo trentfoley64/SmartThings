@@ -23,19 +23,23 @@ definition(
     category: "My Apps",
     iconUrl: "http://www.trentfoley.com/ST/icons/bitcoin.png",
     iconX2Url: "http://www.trentfoley.com/ST/icons/bitcoin@2x.png",
-    iconX3Url: "http://www.trentfoley.com/ST/icons/bitcoin@3x.png",
+    iconX3Url: "http://www.trentfoley.com/ST/icons/bitcoin@3x.png"
 )
 
 preferences {
-	section {
+	section( "Power Meter" ) {
 		input(name: "minerMeter", type: "capability.powerMeter", title: "When This Power Meter...", required: true, multiple: false, description: null)
         input(name: "thresholdLow", type: "number", title: "Either drops to...", required: true, description: "in Watts.")
         input(name: "thresholdHigh", type: "number", title: "Or rises to...", required: true, description: "in Watts.")
 	}
-    section {
+    section( "Power Switch" ) {
     	input(name: "minerSwitches", type: "capability.switch", title: "Turn Off These Switches Powering Mining Equipment", required: true, multiple: true, description: null)
         input(name: "coolOff", type: "number", title: "For how many minutes?", required: true, description: null)
         input(name: "waitForIt", type: "number", title: "Allow how many minutes for startup?", required: true, description: null)
+    }
+	section( "History" ) {
+    	paragraph "Last meter reading: ${state?.lastMeterValue?:'none'}"
+        paragraph "Last bad reading of ${state?.lastBadMeterValue?:'none'} occurred on ${state?.lastBadMeterDate?:'never'}"
     }
 	// Let user specify notification recipients
 	section( "Notifications" ) {
